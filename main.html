@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html>
+   <head>
+      <style>
+         .td {
+            width: 70px;
+            border-right: 1px solid #ddd;
+            display: inline-block;
+            padding: 5px;
+            margin: 3px;
+         }
+         .td2 {
+            width: 190px;
+            border-right: 1px solid #ddd;
+            display: inline-block;
+            padding: 5px;
+            margin: 3px;
+         }
+         .row {
+            display: block;
+            border-bottom: 1px solid #ccc;
+         }
+         body {
+            font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
+               "Lucida Sans", Arial, sans-serif, serif;
+         }
+      </style>
+      <meta http-equiv="Content-Type" content="text/html; charset = utf-8" />
+   </head>
+   <body>
+      <div class="row">
+         <div class="td2">
+            <button onclick="startAdd()">Use Create ObjStore</button>
+         </div>
+
+         <div class="td2">
+            <input type="text" id="objStore" value="defObjStore" />
+            &nbsp;&#8592;
+         </div>
+         <div class="td2">
+            <div id="sdb" style="display: inline-block"></div>
+         </div>
+      </div>
+      <br />
+      <button onclick="startAdd()">Add data</button> &nbsp;
+      <button onclick="clearConsole()">Clear Log</button>
+      <div id="show"></div>
+      <script type="text/javascript">
+         function init() {
+            //prefixes of implementation that we want to test
+            window.indexedDB =
+               window.indexedDB ||
+               window.mozIndexedDB ||
+               window.webkitIndexedDB ||
+               window.msIndexedDB;
+
+            //prefixes of window.IDB objects
+            window.IDBTransaction =
+               window.IDBTransaction ||
+               window.webkitIDBTransaction ||
+               window.msIDBTransaction;
+            window.IDBKeyRange =
+               window.IDBKeyRange ||
+               window.webkitIDBKeyRange ||
+               window.msIDBKeyRange;
+
+            if (!window.indexedDB) {
+               console.log(
+                  "Your browser doesn't support a stable version of IndexedDB."
+               );
+            }
+
+            var db;
+            var request = window.indexedDB.open("OA-Atom", 1);
+
+            request.onerror = function (event) {
+               console.log("error: ");
+            };
+
+            request.onsuccess = function (event) {
+               console.log("/// -> 1 ");
+               db = request.result;
+            };
+            let objStore = document.getElementById("objStore").value;
+            request.onupgradeneeded = function (event) {
+               var db = event.target.result;
+               var objectStore = db.createObjectStore(objStore, {
+                  keyPath: "id",
+               });
+            };
+            let options = "";
+            // wrong here need to get objectStore not current indexDB
+            /*
+            indexedDB
+               .databases()
+               .then(
+                  (r) =>
+                     (options +=
+                        "\n\t<option value='" +
+                        r[0].name +
+                        "'>" +
+                        r[0].name +
+                        "</option>")
+               )
+               .then(() => {
+                  document.getElementById(
+                     "sdb"
+                  ).innerHTML = `<select id="idb" onChange=s2txt(event)><option value="defaultObjStore">defaultObjStore</optio>${options}</select>`;
+               });
+               */
+         }
+         function s2txt(e) {
+            // select change send to text
+            document.getElementById("objStore").value = e.target.value;
+         }
+         function read(db, thisID) {
+            let objStore = document.getElementById("objStore").value;
+            var transaction = db.transaction([objStore]);
+            var objectStore = transaction.objectStore(objStore);
+            var request = objectStore.get(thisID);
+
+            request.onerror = function (event) {
+               console.log("Unable to retrieve data from database!");
+            };
+
+            request.onsuccess = function (event) {
+               // Do something with the request.result!
+               if (request.result) {
+                  console.log(
+                     "Name: " +
+                        request.result.name +
+                        ",Age: " +
+                        request.result.age +
+                        ", Email: " +
+                        request.result.email
+                  );
+               } else {
+                  console.log(thisID + " couldn't be found in your database!");
+               }
+            };
+         }
+         function DOMloaded() {
+            // small delay after DOM content loaded
+
+            setTimeout(() => {
+               init();
+               dbFunct("readAll");
+            }, 200);
+         }
+         function dbFunct(f2call, val) {
+            let objStore = document.getElementById("objStore").value;
+            var db;
+            var request = window.indexedDB.open("OA-Atom", 1);
+            request.onsuccess = function (event) {
+               console.log(11);
+               db2 = event.target.result;
+               var objectStore = db2.createObjectStore(objStore, {
+                  keyPath: "id",
+               });
+               db = request.result;
+
+               if (f2call === "readAll") readAll(db);
+               else if (f2call === "add") add(db, val);
+               else if (f2call === "read") read(db, val);
+               else if (f2call === "remove") remove(db, val);
+            };
+            request.onupgradeneeded = function (event) {
+               console.log("22");
+               db = event.target.result;
+               var objectStore = db.createObjectStore(objStore, {
+                  keyPath: "id",
+               });
+               if (f2call === "readAll") readAll(db);
+               else if (f2call === "add") add(db, val);
+               else if (f2call === "remove") remove(db, val);
+            };
+         }
+         function readAll(db) {
+            let objStore = document.getElementById("objStore").value;
+            console.log(objStore);
+            let s = document.getElementById("show");
+            s.innerHTML = `
+           <div class="wrapper">
+                 <div class="row"">
+                   <div class="td">ID</div>
+                   <div class="td2">Name</div>
+                   <div class="td">Age</div>
+                   <div class="td2">Email</div>
+               </div>
+               `;
+            var objectStore = db.transaction(objStore).objectStore(objStore);
+
+            objectStore.openCursor().onsuccess = function (event) {
+               var cursor = event.target.result;
+
+               if (cursor) {
+                  s.innerHTML += `
+                 <div class="row">
+                    <div class="td">${cursor.key}</div>
+                    <div class="td2">${cursor.value.name}</div>
+                    <div class="td">${cursor.value.age}</div>
+                    <div class="td2">${cursor.value.email}</div>
+                    <div class="td">
+                    <button onclick="dbFunct('remove','${cursor.key}')">Remove</button>
+                    </div>
+                    <div class="td">
+                    <button onclick="dbFunct('read','${cursor.key}')">Read</button>
+                    </div>
+                 </div>`;
+
+                  cursor.continue();
+               } else {
+                  console.log("finished reading all entries");
+               }
+            };
+            setTimeout(() => {
+               s.innerHTML += `<div>`;
+            }, 100);
+         }
+         function add(db, val) {
+            let objStore = document.getElementById("objStore").value;
+            var request2 = db
+               .transaction([objStore], "readwrite")
+               .objectStore(objStore)
+               .add(val);
+
+            request2.onsuccess = function (event) {
+               console.log(`${name} added to database`);
+            };
+
+            request2.onerror = function (event) {
+               console.log("Entry aready exist in your database! ");
+            };
+            dbFunct("readAll");
+         }
+         function remove(db, delId) {
+            let objStore = document.getElementById("objStore").value;
+            var request = db
+               .transaction([objStore], "readwrite")
+               .objectStore(objStore)
+               .delete(delId);
+
+            request.onsuccess = function (event) {
+               console.log("removal from database");
+               dbFunct("readAll");
+            };
+         }
+         function startAdd() {
+            let objStore = document.getElementById("objStore").value;
+            let res = objStore.substring(0, 3) + "-";
+            let age = getRandomInt(88);
+            let name = res + makeString();
+            let obj = {
+               id: makeString(),
+               name: name,
+               age,
+               email: makeString() + "@example.site",
+            };
+            dbFunct("add", obj);
+         }
+         function makeString() {
+            var text = "";
+            var possible =
+               "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+            for (var i = 0; i < 5; i++)
+               text += possible.charAt(
+                  Math.floor(Math.random() * possible.length)
+               );
+
+            return text;
+         }
+         function clearConsole() {
+            console.clear();
+         }
+         function getRandomInt(max) {
+            return Math.floor(Math.random() * Math.floor(max));
+         }
+         document.addEventListener("DOMContentLoaded", DOMloaded());
+      </script>
+   </body>
+</html>
