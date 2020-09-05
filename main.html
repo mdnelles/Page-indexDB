@@ -90,25 +90,7 @@
                });
             };
             let options = "";
-            // wrong here need to get objectStore not current indexDB
-            /*
-            indexedDB
-               .databases()
-               .then(
-                  (r) =>
-                     (options +=
-                        "\n\t<option value='" +
-                        r[0].name +
-                        "'>" +
-                        r[0].name +
-                        "</option>")
-               )
-               .then(() => {
-                  document.getElementById(
-                     "sdb"
-                  ).innerHTML = `<select id="idb" onChange=s2txt(event)><option value="defaultObjStore">defaultObjStore</optio>${options}</select>`;
-               });
-               */
+           
          }
          function s2txt(e) {
             // select change send to text
