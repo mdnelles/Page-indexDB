@@ -54,8 +54,7 @@
                window.mozIndexedDB ||
                window.webkitIndexedDB ||
                window.msIndexedDB;
-
-            //prefixes of window.IDB objects
+            
             window.IDBTransaction =
                window.IDBTransaction ||
                window.webkitIDBTransaction ||
@@ -93,7 +92,6 @@
            
          }
          function s2txt(e) {
-            // select change send to text
             document.getElementById("objStore").value = e.target.value;
          }
          function read(db, thisID) {
