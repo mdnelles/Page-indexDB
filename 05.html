@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <script>
+         function init() {
+            var version = parseInt(db.version);
+            // only increase version when adding an objectStore
+            var request = indexedDB.open("library", version + 1);
+
+            // this only occurs if "library" does not exist
+            request.onupgradeneeded = function () {
+               console.log("//onupgradeneeded");
+               // The database did not previously exist, so create object stores and indexes.
+               var db = request.result;
+               var store = db.createObjectStore("books", { keyPath: "isbn" });
+               var titleIndex = store.createIndex("by_title", "title", {
+                  unique: true,
+               });
+               var authorIndex = store.createIndex("by_author", "author");
+
+               // Populate with initial data.
+               store.put({
+                  title: "Water Buffaloes",
+                  author: "Fred",
+                  isbn: 234567,
+               });
+               store.put({
+                  title: "Bedrock Nights",
+                  author: "Barney",
+                  isbn: 345678,
+               });
+               db.close();
+            };
+
+            // after second refresh of this page it goes to onsuccess
+            request.onsuccess = function () {
+               console.log("//onsuccess");
+               db = request.result;
+
+               // The following example populates the database using a transaction.
+               //var transaction = db.transaction(["books"], 'readwrite');
+               //var tx = db.transaction(["books2", "readwrite"]);
+               var store2 = db
+                  .transaction(["books"], "readwrite")
+                  .objectStore("books");
+
+               store2.put({
+                  title: "Water Buffaloes2",
+                  author: "Fred 3",
+                  isbn: 2345672,
+               });
+               store2.put({
+                  title: "Bedrock Nights2",
+                  author: "Barney 3",
+                  isbn: 345678,
+               });
+               db.close();
+            };
+         }
+      </script>
+   </head>
+
+   <body onload="init()"></body>
+</html>
